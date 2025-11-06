@@ -4,8 +4,8 @@ Since the automated scraper is having issues, here's the **easy browser method**
 
 ## 🎯 Method: Browser Console Script
 
-### Step 1: Open Your Whatnot Page
-1. Go to: https://www.whatnot.com/en-GB/user/poke__queen_1
+### Step 1: Open Your Whatnot Shows Page
+1. Go to: https://www.whatnot.com/en-GB/user/poke__queen_1/shows
 2. Make sure you can see your shows on the page
 3. Scroll down if needed to load all shows
 

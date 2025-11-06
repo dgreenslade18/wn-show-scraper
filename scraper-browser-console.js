@@ -1,11 +1,11 @@
 /**
  * Browser Console Script
  * 
- * Copy and paste this entire script into your browser's console when you're on your Whatnot user page.
+ * Copy and paste this entire script into your browser's console when you're on your Whatnot shows page.
  * It will extract all shows and display them in a format you can copy.
  * 
  * Instructions:
- * 1. Open your Whatnot user page: https://www.whatnot.com/en-GB/user/poke__queen_1
+ * 1. Open your Whatnot shows page: https://www.whatnot.com/en-GB/user/poke__queen_1/shows
  * 2. Open browser console (F12 or Cmd+Option+I)
  * 3. Paste this entire script
  * 4. Press Enter
@@ -154,7 +154,7 @@
     console.log(`\n⚠️  No individual shows found!\n`);
     console.log('💡 Tips:');
     console.log('   1. Make sure you\'re on a page that displays individual shows');
-    console.log('   2. Try navigating to: https://www.whatnot.com/user/poke__queen_1/shows');
+    console.log('   2. Make sure you\'re on: https://www.whatnot.com/en-GB/user/poke__queen_1/shows');
     console.log('   3. Scroll down to load all shows if they load dynamically');
     console.log('   4. Individual shows have URLs like: /live/ABC123');
     console.log('   5. The script looks for links with /live/ followed by an ID\n');

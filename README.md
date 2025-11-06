@@ -27,8 +27,8 @@ npm install
 
 If you're experiencing Puppeteer connection errors, use this method instead:
 
-1. **Open your Whatnot user page** in your browser:
-   - https://www.whatnot.com/en-GB/user/poke__queen_1
+1. **Open your Whatnot shows page** in your browser:
+   - https://www.whatnot.com/en-GB/user/poke__queen_1/shows
 
 2. **Open the browser console**:
    - Chrome/Edge: Press `F12` or `Cmd+Option+I` (Mac) / `Ctrl+Shift+I` (Windows)

@@ -6,9 +6,9 @@
 
 ### Steps:
 
-1. **Open your Whatnot page** in Chrome/Firefox:
+1. **Open your Whatnot shows page** in Chrome/Firefox:
    ```
-   https://www.whatnot.com/en-GB/user/poke__queen_1
+   https://www.whatnot.com/en-GB/user/poke__queen_1/shows
    ```
 
 2. **Open Developer Console**:

@@ -30,7 +30,7 @@ jobs:
       
     - name: Scrape Whatnot shows
       env:
-        WHATNOT_USER_URL: ${{ secrets.WHATNOT_USER_URL || 'https://www.whatnot.com/en-GB/user/poke__queen_1' }}
+        WHATNOT_USER_URL: ${{ secrets.WHATNOT_USER_URL || 'https://www.whatnot.com/en-GB/user/poke__queen_1/shows' }}
       run: node scraper-automated.js
       
     - name: Commit and push if changed
@@ -47,5 +47,7 @@ jobs:
         path: |
           shows.json
           shows.csv
+          debug-screenshot.png
         retention-days: 30
+        if-no-files-found: ignore
 
