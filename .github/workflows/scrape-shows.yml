@@ -37,7 +37,7 @@ jobs:
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add shows.json shows.csv
+        git add shows.json
         git diff --staged --quiet || (git commit -m "Update shows data [skip ci]" && git push)
         
     - name: Upload shows.json as artifact
