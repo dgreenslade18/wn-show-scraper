@@ -5,8 +5,9 @@
   "main": "scraper.js",
   "type": "module",
   "scripts": {
-    "start": "node scraper-automated.js",
-    "scrape": "node scraper-automated.js",
+    "start": "node scraper-stealth.js",
+    "scrape": "node scraper-stealth.js",
+    "scrape-automated": "node scraper-automated.js",
     "scrape-manual": "node scraper-fixed.js",
     "scrape-original": "node scraper.js",
     "scrape-simple": "node scraper-simple.js",
@@ -21,6 +22,8 @@
   "license": "MIT",
   "dependencies": {
     "puppeteer": "^21.5.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "cheerio": "^1.0.0-rc.12",
     "axios": "^1.6.2"
   }

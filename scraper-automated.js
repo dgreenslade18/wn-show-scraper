@@ -46,7 +46,10 @@ async function scrapeWhatnotShows() {
       '--disable-setuid-sandbox',
       '--disable-blink-features=AutomationControlled',
       '--disable-dev-shm-usage',
-      '--disable-gpu'
+      '--disable-gpu',
+      '--disable-web-security',
+      '--disable-features=IsolateOrigins,site-per-process',
+      '--window-size=1920,1080'
     ],
     timeout: 60000
   });
@@ -54,25 +57,96 @@ async function scrapeWhatnotShows() {
   try {
     const page = await browser.newPage();
     
-    // Set realistic browser properties
+    // Set realistic browser properties and anti-detection
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
     await page.setViewport({ width: 1920, height: 1080 });
     
-    // Remove webdriver property
+    // Remove webdriver and other automation indicators
     await page.evaluateOnNewDocument(() => {
+      // Remove webdriver
       Object.defineProperty(navigator, 'webdriver', {
         get: () => false,
       });
+      
+      // Override plugins
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+      });
+      
+      // Override languages
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      });
+      
+      // Chrome runtime
+      window.chrome = {
+        runtime: {},
+      };
+      
+      // Permissions
+      const originalQuery = window.navigator.permissions.query;
+      window.navigator.permissions.query = (parameters) => (
+        parameters.name === 'notifications' ?
+          Promise.resolve({ state: Notification.permission }) :
+          originalQuery(parameters)
+      );
+    });
+    
+    // Set extra headers
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+      'Connection': 'keep-alive',
+      'Upgrade-Insecure-Requests': '1',
     });
     
     console.log('⏳ Navigating to page...');
-    await page.goto(WHATNOT_USER_URL, {
-      waitUntil: 'domcontentloaded',
-      timeout: 60000
-    });
+    
+    // Navigate with retry for Cloudflare
+    let navigationSuccess = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.goto(WHATNOT_USER_URL, {
+          waitUntil: 'networkidle0',
+          timeout: 60000
+        });
+        
+        // Check if we hit Cloudflare
+        const pageTitle = await page.title();
+        const pageContent = await page.evaluate(() => document.body.innerText);
+        
+        if (pageTitle.includes('Just a moment') || 
+            pageContent.includes('Verifying you are human') ||
+            pageContent.includes('Cloudflare')) {
+          console.log(`⚠️  Cloudflare detected (attempt ${attempt}/3). Waiting...`);
+          await page.waitForTimeout(10000); // Wait for Cloudflare to pass
+          
+          // Check again
+          const newTitle = await page.title();
+          if (newTitle.includes('Just a moment')) {
+            throw new Error('Still on Cloudflare page');
+          }
+        }
+        
+        navigationSuccess = true;
+        break;
+      } catch (navError) {
+        console.log(`⚠️  Navigation attempt ${attempt} failed: ${navError.message}`);
+        if (attempt < 3) {
+          await page.waitForTimeout(5000);
+        } else {
+          throw new Error('Failed to bypass Cloudflare after 3 attempts');
+        }
+      }
+    }
+    
+    if (!navigationSuccess) {
+      throw new Error('Could not navigate past Cloudflare protection');
+    }
 
     console.log('⏳ Waiting for content to load...');
-    await page.waitForTimeout(8000); // Wait for dynamic content
+    await page.waitForTimeout(10000); // Wait longer for dynamic content and Cloudflare
     
     // Verify we're on the shows page
     const currentUrl = page.url();

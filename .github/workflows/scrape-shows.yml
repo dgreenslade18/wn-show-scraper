@@ -31,7 +31,7 @@ jobs:
     - name: Scrape Whatnot shows
       env:
         WHATNOT_USER_URL: ${{ secrets.WHATNOT_USER_URL || 'https://www.whatnot.com/en-GB/user/poke__queen_1/shows' }}
-      run: node scraper-automated.js
+      run: node scraper-stealth.js
       
     - name: Commit and push if changed
       run: |
