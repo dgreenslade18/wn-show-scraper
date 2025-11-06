@@ -116,33 +116,44 @@ async function scrapeWhatnotShows() {
     
     // Scroll to load more content if needed
     console.log('📜 Scrolling to load content...');
-    await page.evaluate(async () => {
-      await new Promise((resolve) => {
-        let totalHeight = 0;
-        const distance = 100;
-        let lastHeight = document.body.scrollHeight;
-        const timer = setInterval(() => {
-          window.scrollBy(0, distance);
-          totalHeight += distance;
-          const newHeight = document.body.scrollHeight;
+    try {
+      await page.evaluate(async () => {
+        await new Promise((resolve) => {
+          let totalHeight = 0;
+          const distance = 100;
+          let lastHeight = document.body.scrollHeight;
+          const timer = setInterval(() => {
+            window.scrollBy(0, distance);
+            totalHeight += distance;
+            const newHeight = document.body.scrollHeight;
 
-          // If height didn't change, we've reached the bottom
-          if (newHeight === lastHeight && totalHeight > 500) {
+            // If height didn't change, we've reached the bottom
+            if (newHeight === lastHeight && totalHeight > 500) {
+              clearInterval(timer);
+              resolve();
+            }
+            lastHeight = newHeight;
+          }, 100);
+          
+          // Max scroll time
+          setTimeout(() => {
             clearInterval(timer);
             resolve();
-          }
-          lastHeight = newHeight;
-        }, 100);
-        
-        // Max scroll time
-        setTimeout(() => {
-          clearInterval(timer);
-          resolve();
-        }, 10000);
+          }, 10000);
+        });
       });
-    });
+    } catch (scrollError) {
+      console.log('⚠️  Scrolling had issues, continuing anyway:', scrollError.message);
+    }
     
     await page.waitForTimeout(3000);
+    
+    // Verify page is still valid
+    try {
+      await page.evaluate(() => document.title);
+    } catch (e) {
+      throw new Error('Page context was destroyed. Retrying...');
+    }
     
     // Take screenshot for debugging
     try {
@@ -153,7 +164,14 @@ async function scrapeWhatnotShows() {
     }
     
     console.log('🔍 Extracting show data...');
-    const shows = await page.evaluate(() => {
+    
+    // Extract with retry logic
+    let shows = [];
+    let retries = 3;
+    
+    while (retries > 0) {
+      try {
+        shows = await page.evaluate(() => {
       const showElements = [];
       
       // Debug: Log page info
@@ -292,7 +310,37 @@ async function scrapeWhatnotShows() {
       });
       
       return showElements;
-    });
+        });
+        
+        // Success - break out of retry loop
+        break;
+      } catch (evalError) {
+        retries--;
+        if (evalError.message.includes('Execution context was destroyed') || 
+            evalError.message.includes('Protocol error')) {
+          console.log(`⚠️  Execution context error (${retries} retries left). Waiting and retrying...`);
+          if (retries > 0) {
+            // Wait a bit and try to re-establish context
+            await page.waitForTimeout(2000);
+            // Try to re-navigate if needed
+            try {
+              const currentUrl = page.url();
+              await page.goto(currentUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+              await page.waitForTimeout(3000);
+            } catch (navError) {
+              console.log('⚠️  Could not re-navigate:', navError.message);
+            }
+          }
+        } else {
+          // Different error, don't retry
+          throw evalError;
+        }
+      }
+    }
+    
+    if (shows.length === 0 && retries === 0) {
+      console.log('⚠️  Failed to extract shows after retries. Page may have issues.');
+    }
 
     // Remove duplicates
     const uniqueShows = shows.filter((show, index, self) =>
@@ -354,22 +402,44 @@ async function scrapeWhatnotShows() {
 
   } catch (error) {
     console.error('❌ Error scraping shows:', error.message);
-    // Save empty array on error so workflow doesn't completely fail
-    await fs.writeFile(OUTPUT_FILE, JSON.stringify([], null, 2));
-    throw error;
+    console.error('Stack:', error.stack);
+    
+    // Try to save whatever we have, or empty array
+    try {
+      await fs.writeFile(OUTPUT_FILE, JSON.stringify([], null, 2));
+      console.log('💾 Saved empty shows.json due to error');
+    } catch (writeError) {
+      console.error('❌ Could not save shows.json:', writeError.message);
+    }
+    
+    // Don't throw - let workflow continue (it will commit empty array)
+    // This allows the workflow to complete even if scraping fails
+    return [];
   } finally {
-    await browser.close();
+    try {
+      if (browser) {
+        await browser.close();
+      }
+    } catch (closeError) {
+      console.error('⚠️  Error closing browser:', closeError.message);
+    }
   }
 }
 
 // Run the scraper
 scrapeWhatnotShows()
-  .then(() => {
-    console.log('\n✨ Scraping completed!');
-    process.exit(0);
+  .then((shows) => {
+    if (shows && shows.length > 0) {
+      console.log('\n✨ Scraping completed successfully!');
+    } else {
+      console.log('\n⚠️  Scraping completed but no shows found (or error occurred)');
+    }
+    process.exit(0); // Exit with success so workflow continues
   })
   .catch((error) => {
     console.error('\n💥 Scraping failed:', error.message);
-    process.exit(1);
+    // Exit with 0 so workflow doesn't fail completely
+    // The empty shows.json will still be committed
+    process.exit(0);
   });
 

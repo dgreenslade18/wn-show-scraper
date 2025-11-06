@@ -1,0 +1,337 @@
+{% comment %}
+  Whatnot Shows Section
+  Displays shows from your GitHub-hosted JSON file
+  
+  Usage:
+  1. Copy this file to: themes/YOUR_THEME/sections/whatnot-shows.liquid
+  2. Add the section to a page template or use it as a standalone section
+  3. Update the JSON_URL below with your GitHub raw URL
+{% endcomment %}
+
+{{ 'whatnot-shows.css' | asset_url | stylesheet_tag }}
+
+<div class="whatnot-shows-section" id="whatnot-shows-container">
+  {% if section.settings.json_url != blank %}
+    {% assign json_url = section.settings.json_url %}
+  {% else %}
+    {% comment %} Default to GitHub raw URL - update this with your repo URL {% endcomment %}
+    {% assign json_url = 'https://raw.githubusercontent.com/YOUR_USERNAME/wn-show-scraper/main/shows.json' %}
+  {% endif %}
+
+  <div class="whatnot-shows-header">
+    {% if section.settings.title != blank %}
+      <h2 class="whatnot-shows-title">{{ section.settings.title }}</h2>
+    {% endif %}
+    {% if section.settings.description != blank %}
+      <p class="whatnot-shows-description">{{ section.settings.description }}</p>
+    {% endif %}
+  </div>
+
+  <div class="whatnot-shows-loading" id="whatnot-shows-loading">
+    <div class="loading-spinner"></div>
+    <p>Loading shows...</p>
+  </div>
+
+  <div class="whatnot-shows-error" id="whatnot-shows-error" style="display: none;">
+    <p>Unable to load shows. Please try again later.</p>
+  </div>
+
+  <div class="whatnot-shows-grid" id="whatnot-shows-grid" style="display: none;"></div>
+</div>
+
+<script>
+(function() {
+  const container = document.getElementById('whatnot-shows-container');
+  const loadingEl = document.getElementById('whatnot-shows-loading');
+  const errorEl = document.getElementById('whatnot-shows-error');
+  const gridEl = document.getElementById('whatnot-shows-grid');
+  const jsonUrl = '{{ json_url }}';
+
+  // Fetch shows from JSON
+  fetch(jsonUrl)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(shows => {
+      if (!Array.isArray(shows) || shows.length === 0) {
+        throw new Error('No shows found');
+      }
+
+      // Hide loading, show grid
+      loadingEl.style.display = 'none';
+      gridEl.style.display = 'grid';
+
+      // Render shows
+      gridEl.innerHTML = shows.map(show => {
+        const imageHtml = show.image 
+          ? `<img src="${escapeHtml(show.image)}" alt="${escapeHtml(show.title)}" class="show-image" loading="lazy" onerror="this.style.display='none'">`
+          : '<div class="show-image-placeholder"></div>';
+        
+        const dateHtml = show.date 
+          ? `<div class="show-date">${escapeHtml(show.date)}</div>`
+          : '';
+        
+        const statusHtml = show.status 
+          ? `<span class="show-status show-status-${show.status}">${escapeHtml(show.status)}</span>`
+          : '';
+
+        return `
+          <div class="show-card">
+            ${imageHtml}
+            <div class="show-content">
+              <h3 class="show-title">${escapeHtml(show.title)}</h3>
+              ${dateHtml}
+              ${statusHtml}
+              <a href="${escapeHtml(show.url)}" target="_blank" rel="noopener noreferrer" class="show-link">
+                View Show
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 2H14V6M14 2L8 8M14 2V6H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Update container class to show content
+      container.classList.add('shows-loaded');
+    })
+    .catch(error => {
+      console.error('Error loading shows:', error);
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'block';
+    });
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  }
+})();
+</script>
+
+<style>
+.whatnot-shows-section {
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.whatnot-shows-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.whatnot-shows-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.whatnot-shows-description {
+  font-size: 1.125rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.whatnot-shows-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #1a1a1a;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.whatnot-shows-error {
+  text-align: center;
+  padding: 2rem;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 8px;
+  color: #c33;
+}
+
+.whatnot-shows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.show-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.show-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.show-image,
+.show-image-placeholder {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.show-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 3rem;
+}
+
+.show-content {
+  padding: 1.5rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.show-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.show-date {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.show-status {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  text-transform: capitalize;
+}
+
+.show-status-upcoming {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.show-status-live {
+  background: #ffebee;
+  color: #d32f2f;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.show-status-past {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.show-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #1a1a1a;
+  color: white;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 500;
+  transition: background 0.2s ease;
+  margin-top: auto;
+}
+
+.show-link:hover {
+  background: #333;
+}
+
+.show-link svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 768px) {
+  .whatnot-shows-section {
+    padding: 2rem 1rem;
+  }
+
+  .whatnot-shows-title {
+    font-size: 2rem;
+  }
+
+  .whatnot-shows-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Whatnot Shows",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Upcoming Shows"
+    },
+    {
+      "type": "textarea",
+      "id": "description",
+      "label": "Description",
+      "default": "Check out our upcoming Whatnot shows!"
+    },
+    {
+      "type": "text",
+      "id": "json_url",
+      "label": "JSON URL",
+      "info": "URL to your shows.json file (e.g., GitHub raw URL)",
+      "default": "https://raw.githubusercontent.com/YOUR_USERNAME/wn-show-scraper/main/shows.json"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Whatnot Shows"
+    }
+  ]
+}
+{% endschema %}
+
