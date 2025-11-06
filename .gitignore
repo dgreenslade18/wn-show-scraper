@@ -1,0 +1,17 @@
+node_modules/
+*.log
+.DS_Store
+shows.csv
+debug-screenshot.png
+page-screenshot.png
+error-screenshot.png
+debug-info.json
+page-html.html
+shopify-html.html
+shopify-shows.liquid
+shopify-metafields.json
+.env
+
+# Keep shows.json in git for GitHub Actions (but ignore locally if you want)
+# Uncomment the next line if you don't want to track shows.json locally
+# shows.json

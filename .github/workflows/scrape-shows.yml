@@ -1,0 +1,51 @@
+name: Scrape Whatnot Shows
+
+on:
+  schedule:
+    # Run every 6 hours
+    - cron: '0 */6 * * *'
+  workflow_dispatch: # Allow manual triggering
+  push:
+    branches: [ main, master ]
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Puppeteer browsers
+      run: npx puppeteer browsers install chrome
+      
+    - name: Scrape Whatnot shows
+      env:
+        WHATNOT_USER_URL: ${{ secrets.WHATNOT_USER_URL || 'https://www.whatnot.com/en-GB/user/poke__queen_1' }}
+      run: node scraper-automated.js
+      
+    - name: Commit and push if changed
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add shows.json shows.csv
+        git diff --staged --quiet || (git commit -m "Update shows data [skip ci]" && git push)
+        
+    - name: Upload shows.json as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: shows-data
+        path: |
+          shows.json
+          shows.csv
+        retention-days: 30
+
