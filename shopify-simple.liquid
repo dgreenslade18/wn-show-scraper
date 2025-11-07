@@ -1,0 +1,187 @@
+{% comment %}
+  Simple Whatnot Shows Display
+  Just shows title, image, and link
+  
+  To use:
+  1. Copy this entire file to: themes/YOUR_THEME/sections/whatnot-shows.liquid
+  2. Get your GitHub raw JSON URL (from your repo)
+  3. Add the section in theme customizer and paste the JSON URL
+{% endcomment %}
+
+<div class="whatnot-shows" id="whatnot-shows-container">
+  <h2 class="whatnot-shows-heading">Upcoming Shows</h2>
+  
+  <div class="whatnot-shows-loading" id="whatnot-loading">
+    Loading shows...
+  </div>
+  
+  <div class="whatnot-shows-grid" id="whatnot-shows-grid" style="display: none;">
+    <!-- Shows will be inserted here -->
+  </div>
+</div>
+
+<script>
+(function() {
+  // UPDATE THIS URL with your GitHub raw JSON URL
+  const JSON_URL = '{{ section.settings.json_url | default: "https://raw.githubusercontent.com/YOUR_USERNAME/wn-show-scraper/main/shows.json" }}';
+  
+  const container = document.getElementById('whatnot-shows-container');
+  const loading = document.getElementById('whatnot-loading');
+  const grid = document.getElementById('whatnot-shows-grid');
+  
+  fetch(JSON_URL)
+    .then(response => response.json())
+    .then(shows => {
+      if (!Array.isArray(shows) || shows.length === 0) {
+        loading.textContent = 'No shows found.';
+        return;
+      }
+      
+      // Hide loading, show grid
+      loading.style.display = 'none';
+      grid.style.display = 'grid';
+      
+      // Create show cards
+      grid.innerHTML = shows.map(show => {
+        const imageHtml = show.image 
+          ? `<img src="${show.image}" alt="${show.title}" class="show-image" onerror="this.style.display='none'">`
+          : '<div class="show-image-placeholder">No Image</div>';
+        
+        return `
+          <div class="show-card">
+            ${imageHtml}
+            <div class="show-info">
+              <h3 class="show-title">${escapeHtml(show.title)}</h3>
+              <a href="${escapeHtml(show.url)}" target="_blank" rel="noopener" class="show-link">
+                View Show →
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    })
+    .catch(error => {
+      console.error('Error loading shows:', error);
+      loading.textContent = 'Error loading shows. Please try again later.';
+    });
+  
+  function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+})();
+</script>
+
+<style>
+.whatnot-shows {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.whatnot-shows-heading {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 30px;
+  color: #1a1a1a;
+}
+
+.whatnot-shows-loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.whatnot-shows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.show-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.show-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}
+
+.show-image,
+.show-image-placeholder {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.show-image-placeholder {
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.show-info {
+  padding: 20px;
+}
+
+.show-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.show-link {
+  display: inline-block;
+  color: #1a1a1a;
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 2px solid #1a1a1a;
+  padding-bottom: 2px;
+  transition: color 0.2s;
+}
+
+.show-link:hover {
+  color: #666;
+  border-bottom-color: #666;
+}
+
+@media (max-width: 768px) {
+  .whatnot-shows-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+
+{% schema %}
+{
+  "name": "Whatnot Shows",
+  "settings": [
+    {
+      "type": "text",
+      "id": "json_url",
+      "label": "JSON URL",
+      "info": "Your GitHub raw JSON URL",
+      "default": "https://raw.githubusercontent.com/YOUR_USERNAME/wn-show-scraper/main/shows.json"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Whatnot Shows"
+    }
+  ]
+}
+{% endschema %}
+
+

@@ -11,10 +11,14 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow writing to repo
     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -39,6 +43,8 @@ jobs:
         git config --local user.name "GitHub Action"
         git add shows.json
         git diff --staged --quiet || (git commit -m "Update shows data [skip ci]" && git push)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Upload shows.json as artifact
       uses: actions/upload-artifact@v4
