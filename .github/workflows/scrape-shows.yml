@@ -1,12 +1,9 @@
 name: Scrape Whatnot Shows
 
 on:
-  schedule:
-    # Run every 6 hours
-    - cron: '0 */6 * * *'
-  workflow_dispatch: # Allow manual triggering
-  push:
-    branches: [ main, master ]
+  # Disabled - Cloudflare blocks automated scraping
+  # Use manual browser console script instead
+  workflow_dispatch: # Manual trigger only
 
 jobs:
   scrape:
@@ -20,22 +17,12 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
       
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: npm install
-      
-    - name: Install Puppeteer browsers
-      run: npx puppeteer browsers install chrome
-      
-    - name: Scrape Whatnot shows
-      env:
-        WHATNOT_USER_URL: ${{ secrets.WHATNOT_USER_URL || 'https://www.whatnot.com/en-GB/user/poke__queen_1/shows' }}
-      run: node scraper-stealth.js
+    - name: Note
+      run: |
+        echo "⚠️  Automated scraping is disabled due to Cloudflare protection."
+        echo "📝 Use the browser console script (scraper-browser-console.js) instead."
+        echo "💡 See README.md for instructions."
+        exit 0
       
     - name: Commit and push if changed
       run: |

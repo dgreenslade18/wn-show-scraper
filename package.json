@@ -2,16 +2,10 @@
   "name": "wn-show-scraper",
   "version": "1.0.0",
   "description": "Scraper to extract Whatnot shows for Shopify integration",
-  "main": "scraper.js",
+  "main": "scraper-browser-console.js",
   "type": "module",
   "scripts": {
-    "start": "node scraper-stealth.js",
-    "scrape": "node scraper-stealth.js",
-    "scrape-automated": "node scraper-automated.js",
-    "scrape-manual": "node scraper-fixed.js",
-    "scrape-original": "node scraper.js",
-    "scrape-simple": "node scraper-simple.js",
-    "shopify": "node shopify-helper.js"
+    "test": "echo 'Use scraper-browser-console.js in your browser'"
   },
   "keywords": [
     "whatnot",
